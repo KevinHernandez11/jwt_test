@@ -36,7 +36,7 @@ def create_jwt(user_id: str):
 def index():
     return "¡Hello world!"
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
         return send_from_directory('static', 'register.html')
@@ -75,36 +75,39 @@ def register():
         }).execute()
         return jsonify({'message': 'User registered successfully'}), 201
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['POST', 'GET'])
 def login():
-    email = request.json.get('email')
-    Password = request.json.get('password')
+    if request.method == 'GET':
+        return send_from_directory('static', 'login.html')
+    elif request.method == 'POST':
+        email = request.json.get('email')
+        Password = request.json.get('password')
 
-    if not email or not Password:
-        return jsonify({'error': 'Email and password are required'}), 400
+        if not email or not Password:
+            return jsonify({'error': 'Email and password are required'}), 400
 
-    user_response = cliente.table('users').select('id, email, password').eq('email', email).execute()
+        user_response = cliente.table('users').select('id, email, password').eq('email', email).execute()
 
-    if not user_response.data:
-        return jsonify({'error': 'Invalid email or password'}), 401
-    
-    user = user_response.data[0]
+        if not user_response.data:
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        user = user_response.data[0]
 
-    user_id = user['id']
+        user_id = user['id']
 
-    if not bcrypt.checkpw(Password.encode('utf-8'), user['password'].encode('utf-8')):
-        return jsonify({'error': 'Invalid email or password'}), 401
-    
+        if not bcrypt.checkpw(Password.encode('utf-8'), user['password'].encode('utf-8')):
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
 
-    token = create_jwt(user_id)
+        token = create_jwt(user_id)
 
-    if not token:
-        return jsonify({'error': 'Failed to create token'}), 500
-    
-    return {
-        'message': 'Login successful',
-        'token': token
-    }, 200
+        if not token:
+            return jsonify({'error': 'Failed to create token'}), 500
+        
+        return {
+            'message': 'Login successful',
+            'token': token
+        }, 200
 
  
 if __name__ == '__main__':
